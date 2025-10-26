@@ -11,7 +11,9 @@
 #define BUFFER_SIZE 1024
 
 int main() {
+	int connection_backlog = 5;
 	char buffer[BUFFER_SIZE];
+	
 	// Disable output buffering
 	setbuf(stdout, NULL);
  	setbuf(stderr, NULL);
@@ -47,7 +49,6 @@ int main() {
 	
 	
 	while (1) {
-		int connection_backlog = 5;
 		if (listen(server_fd, connection_backlog) != 0) {
 			printf("Listen failed: %s \n", strerror(errno));
 			return 1;
