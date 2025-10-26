@@ -12,10 +12,7 @@ int main() {
 	setbuf(stdout, NULL);
  	setbuf(stderr, NULL);
 
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	printf("Logs from your program will appear here!\n");
-
-	// TODO: Uncomment the code below to pass the first stage
+	printf("HTTP Server started\n");
 	
 	int server_fd, client_addr_len;
 	struct sockaddr_in client_addr;
@@ -53,8 +50,9 @@ int main() {
 	printf("Waiting for a client to connect...\n");
 	client_addr_len = sizeof(client_addr);
 	
-	accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_len);
+	int id = accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_len);
 	printf("Client connected\n");
+	send(id, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
 	
 	close(server_fd);
 
