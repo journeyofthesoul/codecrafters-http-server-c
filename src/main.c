@@ -55,7 +55,7 @@ int main() {
 		
 		printf("Waiting for a client to connect...\n");
 		client_addr_len = sizeof(client_addr);
-		
+
         // Accept a client connection
 		clientSocket = accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_len);
 		if (clientSocket < 0) {
@@ -82,8 +82,10 @@ int main() {
 
 		// Close the client socket
 		close(clientSocket);
-		close(server_fd);
 	}
+
+	// Close the server socket
+	close(server_fd);
 
 	return 0;
 }
