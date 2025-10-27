@@ -7,13 +7,16 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include "http/http_parser.h"
 
 #define BUFFER_SIZE 1024
+#define OK "HTTP/1.1 200 OK\r\n\r\n"
+#define NOT_FOUND "HTTP/1.1 404 Not Found\r\n\r\n"
 
 int main() {
 	int connection_backlog = 5;
 	char buffer[BUFFER_SIZE];
-	
+
 	// Disable output buffering
 	setbuf(stdout, NULL);
  	setbuf(stderr, NULL);
@@ -72,9 +75,18 @@ int main() {
             buffer[bytes_received] = '\0'; // Null-terminate the received data
             printf("Received HTTP Request:\n%s\n", buffer);
 
-            // Send a simple HTTP response
-            const char *http_response = "HTTP/1.1 200 OK\r\n\r\n";
-            send(clientSocket, http_response, strlen(http_response), 0);
+			HttpRequest req;
+			if (parse_http_request(buffer, &req) == 0) {
+				printf("Parsed Request:\nMethod: %s\nPath: %s\nVersion: %s\nHeaders:\n",
+					req.method, req.path, req.version);
+				if (strcmp(req.path, "/") == 0)
+					send(clientSocket, OK, strlen(OK), 0);
+				else
+					send(clientSocket, NOT_FOUND, strlen(NOT_FOUND), 0);
+				free_http_request(&req);
+			} else {
+				fprintf(stderr, "Failed to parse HTTP request.\n");
+			}
         } else if (bytes_received == 0) {
             printf("Client disconnected.\n");
         } else {
