@@ -10,8 +10,12 @@
 #include "http/http_parser.h"
 
 #define BUFFER_SIZE 1024
-#define OK "HTTP/1.1 200 OK\r\n\r\n"
-#define NOT_FOUND "HTTP/1.1 404 Not Found\r\n\r\n"
+#define OK "HTTP/1.1 200 OK\r\n"
+#define NOT_FOUND "HTTP/1.1 404 Not Found\r\n"
+#define CRLF "\r\n"
+#define ECHO_PREFIX "/echo/"
+#define CONTENT_TYPE_TEXT_PLAIN "Content-Type: text/plain\r\n"
+#define CONTENT_LENGTH_PREFIX "Content-Length: "
 
 int main() {
 	int connection_backlog = 5;
@@ -79,10 +83,32 @@ int main() {
 			if (parse_http_request(buffer, &req) == 0) {
 				printf("Parsed Request:\nMethod: %s\nPath: %s\nVersion: %s\nHeaders:\n",
 					req.method, req.path, req.version);
-				if (strcmp(req.path, "/") == 0)
-					send(clientSocket, OK, strlen(OK), 0);
-				else
-					send(clientSocket, NOT_FOUND, strlen(NOT_FOUND), 0);
+				if (strcmp(req.path, "/") == 0){
+					char response[128];  // writable buffer
+					strcpy(response, OK); // copy the literal into writable memory
+					strcat(response, CRLF); // safely append CRLF as the end of headers
+					send(clientSocket, response, strlen(response), 0);
+				} else if (strncmp(req.path, ECHO_PREFIX, strlen(ECHO_PREFIX)) == 0){
+					char response[128];  // writable buffer
+					strcpy(response, OK); // copy the literal into writable memory
+					strcat(response, CONTENT_TYPE_TEXT_PLAIN);
+					strcat(response, CONTENT_LENGTH_PREFIX);
+					int bodyLength = strlen(req.path) - strlen(ECHO_PREFIX);
+					char responseBody[bodyLength + 1];
+					strncpy(responseBody, req.path + strlen(ECHO_PREFIX), bodyLength);
+					char contentLength[20]; // Declare a character array to store the string
+					sprintf(contentLength, "%d", bodyLength);
+					strcat(response, contentLength);
+					strcat(response, CRLF); // append CRLF as part of single header Content-Length
+					strcat(response, CRLF); // safely append CRLF as the end of headers
+					strcat(response, responseBody);
+					send(clientSocket, response, strlen(response), 0);
+				} else {
+					char response[128];  // writable buffer
+					strcpy(response, NOT_FOUND); // copy the literal into writable memory
+					strcat(response, CRLF); // safely append CRLF as the end of headers
+					send(clientSocket, response, strlen(response), 0);
+				}
 				free_http_request(&req);
 			} else {
 				fprintf(stderr, "Failed to parse HTTP request.\n");
