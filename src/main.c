@@ -14,6 +14,7 @@
 #define NOT_FOUND "HTTP/1.1 404 Not Found\r\n"
 #define CRLF "\r\n"
 #define ECHO_PREFIX "/echo/"
+#define USER_AGENT_PREFIX "/user-agent"
 #define CONTENT_TYPE_TEXT_PLAIN "Content-Type: text/plain\r\n"
 #define CONTENT_LENGTH_PREFIX "Content-Length: "
 
@@ -102,6 +103,26 @@ int main() {
 					strcat(response, CRLF); // append CRLF as part of single header Content-Length
 					strcat(response, CRLF); // safely append CRLF as the end of headers
 					strcat(response, responseBody);
+					send(clientSocket, response, strlen(response), 0);
+				} else if (strncmp(req.path, USER_AGENT_PREFIX, strlen(USER_AGENT_PREFIX)) == 0){
+					char response[512];  // writable buffer
+					strcpy(response, OK); // copy the literal into writable memory
+					strcat(response, CONTENT_TYPE_TEXT_PLAIN);
+					const char *userAgent = "Unknown";
+					for (int i = 0; i < req.header_count; i++) {
+						if (strcmp(req.headers[i].key, "User-Agent") == 0) {
+							userAgent = req.headers[i].value;
+							break;
+						}
+					}
+					strcat(response, CONTENT_LENGTH_PREFIX);
+					int bodyLength = strlen(userAgent);
+					char contentLength[20]; // Declare a character array to store the string
+					sprintf(contentLength, "%d", bodyLength);
+					strcat(response, contentLength);
+					strcat(response, CRLF); // append CRLF as part of single header Content-Length
+					strcat(response, CRLF); // safely append CRLF as the end of headers
+					strcat(response, userAgent);
 					send(clientSocket, response, strlen(response), 0);
 				} else {
 					char response[128];  // writable buffer
